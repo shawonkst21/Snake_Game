@@ -8,7 +8,7 @@ const int SCREEN_WIDTH = 620;
 const int SCREEN_HEIGHT = 480;
 const int GRID_SIZE = 10;
 const int INITIAL_LENGTH = 5;
-
+int current_time;
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
 TTF_Font *font = nullptr;
@@ -38,8 +38,9 @@ struct Food
 
 Snake snake;
 Food fruit;
+Food sfruit;
 int score = 0;
-
+int cnt=0;
 bool gameOver = false;
 // creating a food in random place............................................
 void foodplace()
@@ -63,10 +64,34 @@ void foodplace()
         }
     }
 }
+void sfoodplace()
+{
+              current_time = SDL_GetTicks();
+
+
+    bool onSnakeBody = true;
+
+    while (onSnakeBody)
+    {
+        onSnakeBody = false;
+        sfruit.x = rand() % (SCREEN_WIDTH / GRID_SIZE) * GRID_SIZE;
+        sfruit.y = rand() % (SCREEN_HEIGHT / GRID_SIZE) * GRID_SIZE;
+
+        // Check fruit on body;
+        for (const auto &segment : snake.body)
+        {
+            if (sfruit.x == segment.first && sfruit.y == segment.second)
+            {
+                onSnakeBody = true;
+                break;
+            }
+        }
+    }
+}
 // initialize winddow,renderer and ttf...............................
 void initializepart()
 {
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    SDL_Init(SDL_INIT_EVERYTHING);
     TTF_Init();
 
     SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0, &window, &renderer);
@@ -85,11 +110,18 @@ void initializepart()
     snake.body.push_back({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
     snake.direction = 'R';
     foodplace();
+    sfruit.x=-10;
+    sfruit.y=-20;
 }
 // update .....................................................................
 void update()
 {
-
+      int recent_time=SDL_GetTicks();
+      if(recent_time-current_time>=6000)
+      {
+        sfruit.x=-10;
+        sfruit.y=-10;
+      }
     pair<int, int> newsnake = snake.body.front();
 
     switch (snake.direction)
@@ -136,18 +168,31 @@ void update()
     {
         newsnake.second = 0;
     }
-
+    
     snake.body.insert(snake.body.begin(), newsnake);
 
     if (newsnake.first == fruit.x && newsnake.second == fruit.y)
     {
         foodplace();
         score += 5;
+        cnt++;
+        if(cnt%7==0)
+        {
+            sfoodplace();
+        }
+    }
+    else  if (newsnake.first == sfruit.x && newsnake.second == sfruit.y)
+    {
+        score += 10;
+        sfruit.x=-100;
+        sfruit.y=-10;
     }
     else
     {
         snake.body.pop_back();
     }
+      
+
 }
 //
 void renderGameOver()
@@ -206,8 +251,22 @@ void snakerend()
 }
 void foodrend()
 {
-    SDL_Rect foodRect = {fruit.x, fruit.y, GRID_SIZE, GRID_SIZE};
-    SDL_RenderFillRect(renderer, &foodRect);
+    SDL_Rect foodRect = {fruit.x, fruit.y, 10, 10};
+   SDL_RenderFillRect(renderer, &foodRect);
+}
+void sfoodrend()
+{
+     SDL_Rect sfoodRect = {sfruit.x, sfruit.y, 10, 10};
+    SDL_RenderFillRect(renderer, &sfoodRect);
+}
+void resetsnake()
+{
+     snake.body.clear();
+          snake.body.push_back({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
+    snake.direction = 'R';
+    foodplace();
+     sfruit.x=-10;
+     sfruit.y=-20;
 }
 void render()
 {
@@ -226,8 +285,10 @@ void render()
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
         snakerend();
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        foodrend();
+                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                 foodrend();
+ SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+         sfoodrend();
 
         // Render the score
         string scoreText = "Score: " + to_string(score);
@@ -248,12 +309,9 @@ void render()
         SDL_FreeSurface(finished);
         SDL_RenderCopy(renderer, g_finished, NULL, NULL);
         renderGameOver();
-
+        resetsnake();
         SDL_RenderPresent(renderer);
-        snake.body.clear();
-          snake.body.push_back({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
-    snake.direction = 'R';
-    foodplace();
+       
         //SDL_Delay(15000);
         //SDL_Quit();
     }
@@ -380,7 +438,13 @@ void hardbutton()
     SDL_DestroyTexture(texture);
     TTF_CloseFont(buttonFont);
 }
+bool ishardbuttonclicked(int mouseX, int mouseY)
+{
 
+    SDL_Rect hardbuttonract = {200, 300, 200, 50};
+
+    return isPointInsideRect(mouseX, mouseY, hardbuttonract);
+}
 bool ismutebuttonclicked(int mouseX, int mouseY)
 {
     SDL_Rect mute = {5, 5, 20, 20};
@@ -400,6 +464,7 @@ void gameloop()
     bool quit = false;
     int phase = 0;
     int mcnt=0;
+    bool mode=false;
     // music
     bgm = Mix_LoadMUS("music/bgm.mp3");
     Mix_PlayMusic(bgm, -1);
@@ -479,10 +544,18 @@ void gameloop()
                     Mix_HaltMusic();
                      Mix_PlayMusic(ne,-1);
                     phase = 2;
+                    mode=true;
                 }
                 else if (isExitButtonClicked(mouseX, mouseY)&& phase==0)
                 {
                     quit = true;
+                }
+                else if(ishardbuttonclicked(mouseX,mouseY)&& phase==1)
+                {
+                     Mix_HaltMusic();
+                     Mix_PlayMusic(ne,-1);
+                    phase = 2;
+                  mode=false;
                 }
             }
         }
@@ -523,11 +596,18 @@ void gameloop()
         }
         else if (phase == 2)
         {
-            update();
+           if(mode)
+           {
+             update();
             render();
+           }
+           else{
+             update();
+            render();
+           }
         }
 
-        SDL_Delay(100);
+        SDL_Delay(80);
     }
 }
 
