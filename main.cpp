@@ -113,6 +113,7 @@ void initializepart()
     sfruit.x=-10;
     sfruit.y=-20;
 }
+
 // update .....................................................................
 void update()
 {
