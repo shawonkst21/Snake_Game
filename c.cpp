@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
+#include<SDL2/SDL_image.h>
 using namespace std;
 
 const int SCREEN_WIDTH = 620;
@@ -18,6 +19,8 @@ SDL_Texture *p_texture = nullptr;
 Mix_Music *bgm = nullptr;
 Mix_Music *test = nullptr;
 Mix_Music *ne = nullptr;
+Mix_Chunk *eat = nullptr;
+
 SDL_Surface *finished = nullptr;
 SDL_Texture *g_finished = nullptr;
 SDL_Surface *phase_1 = nullptr;
@@ -98,6 +101,52 @@ void foodplace2()
         }
     }
 }
+void foodplace3()
+{
+    bool onSnakeBody = true;
+
+    while (onSnakeBody)
+    {
+        onSnakeBody = false;
+        fruit.x = rand() % (SCREEN_WIDTH / GRID_SIZE) * GRID_SIZE;
+        fruit.y = rand() % (SCREEN_HEIGHT / GRID_SIZE) * GRID_SIZE;
+
+        // Check fruit on body;
+        for (const auto &segment : snake.body)
+        {
+            if (fruit.x == segment.first && fruit.y == segment.second)
+            {
+                onSnakeBody = true;
+                break;
+            }
+        }
+
+        // Check fruit on side obstacles;
+        if (fruit.x >= 0 && fruit.x <= 15 && fruit.y >= 0 && fruit.y <= SCREEN_HEIGHT ||
+            fruit.x >= SCREEN_WIDTH - 25 && fruit.x <= SCREEN_WIDTH && fruit.y >= 0 && fruit.y <= SCREEN_HEIGHT ||
+            fruit.x >= 15 && fruit.x <= SCREEN_WIDTH - 15 && fruit.y >= 0 && fruit.y <= 25 ||
+            fruit.x >= 15 && fruit.x <= SCREEN_WIDTH - 15 && fruit.y >= SCREEN_HEIGHT - 25 && fruit.y <= SCREEN_HEIGHT)
+        {
+            onSnakeBody = true;
+        }
+
+        // Check fruit inside obstacles;
+        if ((fruit.x >= 80 && fruit.x <= 280 && fruit.y >= 75 && fruit.y <= 90) ||
+            (fruit.x >= 340 && fruit.x <= 540 && fruit.y >= 75 && fruit.y <= 90) ||
+            (fruit.x >= 65 && fruit.x <= 80 && fruit.y >= 75 && fruit.y <= 210) ||
+            (fruit.x >= 540 && fruit.x <= 555 && fruit.y >= 75 && fruit.y <= 210) ||
+            (fruit.x >= 65 && fruit.x <= 80 && fruit.y >= 255 && fruit.y <= 390) ||
+            (fruit.x >= 65 && fruit.x <= 280 && fruit.y >= 390 && fruit.y <= 405) ||
+            (fruit.x >= 340 && fruit.x <= 540 && fruit.y >= 390 && fruit.y <= 405) ||
+            (fruit.x >= 540 && fruit.x <= 555 && fruit.y >= 255 && fruit.y <= 405) ||
+            (fruit.x >= SCREEN_WIDTH / 2 - 7 && fruit.x <= 15 && fruit.y >= SCREEN_WIDTH / 2 - 25 && fruit.y <= 50))
+        {
+            onSnakeBody = true;
+        }
+    }
+}
+
+
 void sfoodplace()
 {
     current_time = SDL_GetTicks();
@@ -152,11 +201,57 @@ void sfoodplace2()
         }
     }
 }
+void sfoodplace3()
+{
+    current_time = SDL_GetTicks();
+
+    bool onSnakeBody = true;
+
+    while (onSnakeBody)
+    {
+        onSnakeBody = false;
+        sfruit.x = rand() % (SCREEN_WIDTH / GRID_SIZE) * GRID_SIZE;
+        sfruit.y = rand() % (SCREEN_HEIGHT / GRID_SIZE) * GRID_SIZE;
+
+        // Check fruit on body;
+        for (const auto &segment : snake.body)
+        {
+            if (sfruit.x == segment.first && sfruit.y == segment.second)
+            {
+                onSnakeBody = true;
+                break;
+            }
+        }
+
+        // Check fruit on side obstacles;
+        if (sfruit.x >= 0 && sfruit.x <= 15 && sfruit.y >= 0 && sfruit.y <= SCREEN_HEIGHT ||
+            sfruit.x >= SCREEN_WIDTH - 15 && sfruit.x <= SCREEN_WIDTH && sfruit.y >= 0 && sfruit.y <= SCREEN_HEIGHT ||
+            sfruit.x >= 15 && sfruit.x <= SCREEN_WIDTH - 15 && sfruit.y >= 0 && sfruit.y <= 15 ||
+            sfruit.x >= 15 && sfruit.x <= SCREEN_WIDTH - 15 && sfruit.y >= SCREEN_HEIGHT - 15 && sfruit.y <= SCREEN_HEIGHT)
+        {
+            onSnakeBody = true;
+        }
+
+        // Check fruit inside obstacles;
+        if ((sfruit.x >= 80 && sfruit.x <= 280 && sfruit.y >= 75 && sfruit.y <= 90) ||
+            (sfruit.x >= 340 && sfruit.x <= 540 && sfruit.y >= 75 && sfruit.y <= 90) ||
+            (sfruit.x >= 65 && sfruit.x <= 80 && sfruit.y >= 75 && sfruit.y <= 210) ||
+            (sfruit.x >= 540 && sfruit.x <= 555 && sfruit.y >= 75 && sfruit.y <= 210) ||
+            (sfruit.x >= 65 && sfruit.x <= 80 && sfruit.y >= 255 && sfruit.y <= 390) ||
+            (sfruit.x >= 65 && sfruit.x <= 280 && sfruit.y >= 390 && sfruit.y <= 405) ||
+            (sfruit.x >= 340 && sfruit.x <= 540 && sfruit.y >= 390 && sfruit.y <= 405) ||
+            (sfruit.x >= 540 && sfruit.x <= 555 && sfruit.y >= 255 && sfruit.y <= 405))
+        {
+            onSnakeBody = true;
+        }
+    }
+}
 // initialize winddow,renderer and ttf...............................
 void initializepart()
 {
     SDL_Init(SDL_INIT_EVERYTHING);
     TTF_Init();
+    IMG_Init(IMG_INIT_PNG);
 
     SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0, &window, &renderer);
 
@@ -174,18 +269,51 @@ void initializepart()
     snake.body.push_back({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
     snake.direction = 'R';
     foodplace();
-    sfruit.x = -10;
-    sfruit.y = -20;
+    sfruit.x = -100;
+    sfruit.y = -200;
 }
+bool check(int a, int b)
+{
 
+    SDL_Rect side1 = {0, 0, 15, SCREEN_HEIGHT};
+    SDL_Rect side2 = {15, 0, SCREEN_WIDTH - 30, 15};
+    SDL_Rect side3 = {SCREEN_WIDTH - 20, 0, 15, SCREEN_HEIGHT};
+    SDL_Rect side4 = {15, SCREEN_HEIGHT - 20, SCREEN_WIDTH - 35, 15};
+
+    SDL_Rect inside1 = {80, 75, 200, 15};
+    SDL_Rect inside2 = {340, 75, 200, 15};
+    SDL_Rect inside3 = {65, 75, 15, 135};
+    SDL_Rect inside4 = {540, 75, 15, 135};
+    SDL_Rect inside5 = {65, 255, 15, 135};
+    SDL_Rect inside6 = {65, 390, 215, 15};
+    SDL_Rect inside7 = {340, 390, 200, 15};
+    SDL_Rect inside8 = {540, 255, 15, 150};
+    SDL_Rect inside9 = {SCREEN_WIDTH / 2 - 7, SCREEN_HEIGHT / 2 - 25, 15, 50};
+
+    if (isPointInsideRect(a, b, side1) || isPointInsideRect(a, b, side2) || isPointInsideRect(a, b, side3) || isPointInsideRect(a, b, side4) ||
+        isPointInsideRect(a, b, inside1) || isPointInsideRect(a, b, inside2) || isPointInsideRect(a, b, inside3) || isPointInsideRect(a, b, inside4) ||
+        isPointInsideRect(a, b, inside5) || isPointInsideRect(a, b, inside6) || isPointInsideRect(a, b, inside7) || isPointInsideRect(a, b, inside8) ||
+        isPointInsideRect(a, b, inside9))
+    {
+        return 1;
+    }
+}
+bool foodcheck(int a, int b)
+{
+    SDL_Rect foodRect = {fruit.x, fruit.y, 15, 15};
+    if (isPointInsideRect(a, b, foodRect))
+    {
+        return 1;
+    }
+}
 // update .....................................................................
 void update()
 {
     int recent_time = SDL_GetTicks();
     if (recent_time - current_time >= 6000)
     {
-        sfruit.x = -10;
-        sfruit.y = -10;
+        sfruit.x = -100;
+        sfruit.y = -100;
     }
     pair<int, int> newsnake = snake.body.front();
 
@@ -225,6 +353,15 @@ void update()
             Mix_HaltMusic();
         }
     }
+   else if (level == 3)
+    {
+        bool over = check(newsnake.first, newsnake.second);
+        if (over)
+        {
+            gameOver = true;
+            Mix_HaltMusic();
+        }
+    }
     // collusion check with boundaries.....................................................
     if (newsnake.first < 0)
     {
@@ -246,7 +383,7 @@ void update()
 
     snake.body.insert(snake.body.begin(), newsnake);
 
-    if (newsnake.first == fruit.x && newsnake.second == fruit.y)
+    if (foodcheck(newsnake.first, newsnake.second))
     {
         if (level == 1)
         {
@@ -256,6 +393,11 @@ void update()
         {
             foodplace2();
         }
+        else if(level==3)
+        {
+            foodplace3();
+        }
+       Mix_PlayChannel(-1,eat,0);
         score += 5;
         cnt++;
         if (cnt % 7 == 0)
@@ -268,13 +410,17 @@ void update()
             {
                 sfoodplace2();
             }
+            else if(level==3)
+            {
+                 sfoodplace3();
+            }
         }
     }
     else if (newsnake.first == sfruit.x && newsnake.second == sfruit.y)
     {
         score += 10;
         sfruit.x = -100;
-        sfruit.y = -10;
+        sfruit.y = -100;
     }
     else
     {
@@ -305,6 +451,21 @@ void renderGameOver()
         input >> highscore;
 
         ofstream output("highscore2.txt");
+        if (score > highscore)
+        {
+            output << score;
+        }
+        else
+        {
+            output << highscore;
+        }
+    }
+      else if (level == 3)
+    {
+        ifstream input("highscore3.txt");
+        input >> highscore;
+
+        ofstream output("highscore3.txt");
         if (score > highscore)
         {
             output << score;
@@ -346,21 +507,147 @@ void renderGameOver()
 }
 void snakerend()
 {
-    for (const auto &segment : snake.body)
+    SDL_Surface *headUpImg = IMG_Load("pic/head_up.png");
+    SDL_Texture *headUpTexture = SDL_CreateTextureFromSurface(renderer, headUpImg);
+    SDL_FreeSurface(headUpImg);
+
+    SDL_Surface *headDownImg = IMG_Load("pic/head_down.png");
+    SDL_Texture *headDownTexture = SDL_CreateTextureFromSurface(renderer, headDownImg);
+    SDL_FreeSurface(headDownImg);
+
+    SDL_Surface *headLeftImg = IMG_Load("pic/head_left.png");
+    SDL_Texture *headLeftTexture = SDL_CreateTextureFromSurface(renderer, headLeftImg);
+    SDL_FreeSurface(headLeftImg);
+
+    SDL_Surface *headRightImg = IMG_Load("pic/head_right.png");
+    SDL_Texture *headRightTexture = SDL_CreateTextureFromSurface(renderer, headRightImg);
+    SDL_FreeSurface(headRightImg);
+//.............................................................................................
+    SDL_Surface *bodyUpImg = IMG_Load("pic/body_up.png");
+    SDL_Texture *bodyUpTexture = SDL_CreateTextureFromSurface(renderer, bodyUpImg);
+    SDL_FreeSurface(bodyUpImg);
+
+    SDL_Surface *bodyDownImg = IMG_Load("pic/body_down.png");
+    SDL_Texture *bodyDownTexture = SDL_CreateTextureFromSurface(renderer, bodyDownImg);
+    SDL_FreeSurface(bodyDownImg);
+
+    SDL_Surface *bodyLeftImg = IMG_Load("pic/body_left.png");
+    SDL_Texture *bodyLeftTexture = SDL_CreateTextureFromSurface(renderer, bodyLeftImg);
+    SDL_FreeSurface(bodyLeftImg);
+
+    SDL_Surface *bodyRightImg = IMG_Load("pic/body_right.png");
+    SDL_Texture *bodyRightTexture = SDL_CreateTextureFromSurface(renderer, bodyRightImg);
+    SDL_FreeSurface(bodyRightImg);
+    //..........................................
+    SDL_Surface *tailUpImg = IMG_Load("pic/tail_up.png");
+    SDL_Texture *tailUpTexture = SDL_CreateTextureFromSurface(renderer, tailUpImg);
+    SDL_FreeSurface(tailUpImg);
+
+    SDL_Surface *tailDownImg = IMG_Load("pic/tail_down.png");
+    SDL_Texture *tailDownTexture = SDL_CreateTextureFromSurface(renderer, tailDownImg);
+    SDL_FreeSurface(tailDownImg);
+
+    SDL_Surface *tailLeftImg = IMG_Load("pic/tail_left.png");
+    SDL_Texture *tailLeftTexture = SDL_CreateTextureFromSurface(renderer, tailLeftImg);
+    SDL_FreeSurface(tailLeftImg);
+
+    SDL_Surface *tailRightImg = IMG_Load("pic/tail_right.png");
+    SDL_Texture *tailRightTexture = SDL_CreateTextureFromSurface(renderer, tailRightImg);
+    SDL_FreeSurface(tailRightImg);
+
+    for (int i = 0; i < snake.body.size(); ++i)
     {
-        SDL_Rect rect = {segment.first, segment.second, GRID_SIZE, GRID_SIZE};
-        SDL_RenderFillRect(renderer, &rect);
+        if (i == 0)
+        {
+            SDL_Rect rect = {snake.body[i].first, snake.body[i].second, 10, 10};
+
+            switch (snake.direction)
+            {
+            case 'U':
+                SDL_RenderCopy(renderer, headUpTexture, NULL, &rect);
+                break;
+            case 'D':
+                SDL_RenderCopy(renderer, headDownTexture, NULL, &rect);
+                break;
+            case 'L':
+                SDL_RenderCopy(renderer, headLeftTexture, NULL, &rect);
+                break;
+            case 'R':
+                SDL_RenderCopy(renderer, headRightTexture, NULL, &rect);
+                break;
+            }
+        }
+        else if (i != 0 && i < snake.body.size() - 1)
+        {
+            SDL_Rect rect = {snake.body[i].first, snake.body[i].second, 10, 10};
+            switch (snake.direction)
+            {
+            case 'U':
+                SDL_RenderCopy(renderer, bodyUpTexture, NULL, &rect);
+                break;
+            case 'D':
+                SDL_RenderCopy(renderer, bodyDownTexture, NULL, &rect);
+                break;
+            case 'L':
+                SDL_RenderCopy(renderer, bodyLeftTexture, NULL, &rect);
+                break;
+            case 'R':
+                SDL_RenderCopy(renderer, bodyRightTexture, NULL, &rect);
+                break;
+            }
+        }
+        else
+        {
+            SDL_Rect rect = {snake.body[i].first, snake.body[i].second, 10, 10};
+            switch (snake.direction)
+            {
+            case 'U':
+                SDL_RenderCopy(renderer, tailUpTexture, NULL, &rect);
+                break;
+            case 'D':
+                SDL_RenderCopy(renderer, tailDownTexture, NULL, &rect);
+                break;
+            case 'L':
+                SDL_RenderCopy(renderer, tailLeftTexture, NULL, &rect);
+                break;
+            case 'R':
+                SDL_RenderCopy(renderer, tailRightTexture, NULL, &rect);
+                break;
+            }
+        }
     }
+    SDL_DestroyTexture(headUpTexture);
+    SDL_DestroyTexture(headDownTexture);
+    SDL_DestroyTexture(headLeftTexture);
+    SDL_DestroyTexture(headRightTexture);
+    SDL_DestroyTexture(bodyUpTexture);
+    SDL_DestroyTexture(bodyDownTexture);
+    SDL_DestroyTexture(bodyLeftTexture);
+    SDL_DestroyTexture(bodyRightTexture);
+    SDL_DestroyTexture(tailUpTexture);
+    SDL_DestroyTexture(tailDownTexture);
+    SDL_DestroyTexture(tailLeftTexture);
+    SDL_DestroyTexture(tailRightTexture);
 }
 void foodrend()
 {
-    SDL_Rect foodRect = {fruit.x, fruit.y, 10, 10};
-    SDL_RenderFillRect(renderer, &foodRect);
+    SDL_Rect foodRect = {fruit.x, fruit.y, 15, 15};
+    // SDL_RenderFillRect(renderer, &foodRect);
+    SDL_Surface *image = IMG_Load("pic/fruit2.png");
+    SDL_Texture *ourpng = SDL_CreateTextureFromSurface(renderer, image);
+    SDL_FreeSurface(image);
+    SDL_RenderCopy(renderer, ourpng, NULL, &foodRect);
+    SDL_DestroyTexture(ourpng);
 }
 void sfoodrend()
 {
-    SDL_Rect sfoodRect = {sfruit.x, sfruit.y, 10, 10};
-    SDL_RenderFillRect(renderer, &sfoodRect);
+    SDL_Rect sfoodRect = {sfruit.x, sfruit.y, 15, 15};
+   // SDL_RenderFillRect(renderer, &sfoodRect);
+     SDL_Surface *image = IMG_Load("pic/fruit.png");
+    SDL_Texture *ourpng = SDL_CreateTextureFromSurface(renderer, image);
+    SDL_FreeSurface(image);
+    SDL_RenderCopy(renderer, ourpng, NULL, &sfoodRect);
+    SDL_DestroyTexture(ourpng);
 }
 void resetsnake()
 {
@@ -372,7 +659,7 @@ void resetsnake()
     sfruit.y = -20;
     cnt = 0;
 }
-void createobstacle2()
+void createobstacle()
 {
     // obstacle1..............
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -383,7 +670,58 @@ void createobstacle2()
     SDL_RenderFillRect(renderer, &obstacle2);
     // obstacle2.......................
 }
+void sideobstacle()
+{
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect side1 = {0, 0, 15, SCREEN_HEIGHT};
+    SDL_RenderFillRect(renderer, &side1);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect side2 = {15, 0, SCREEN_WIDTH - 30, 15};
+    SDL_RenderFillRect(renderer, &side2);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect side3 = {SCREEN_WIDTH - 15, 0, 15, SCREEN_HEIGHT};
+    SDL_RenderFillRect(renderer, &side3);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect side4 = {15, SCREEN_HEIGHT - 15, SCREEN_WIDTH - 30, 15};
+    SDL_RenderFillRect(renderer, &side4);
+}
+void insideobtacle1()
+{
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside1 = {80, 75, 200, 15};
+    SDL_RenderFillRect(renderer, &inside1);
 
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside2 = {340, 75, 200, 15};
+    SDL_RenderFillRect(renderer, &inside2);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside3 = {65, 75, 15, 135};
+    SDL_RenderFillRect(renderer, &inside3);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside4 = {540, 75, 15, 135};
+    SDL_RenderFillRect(renderer, &inside4);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside5 = {65, 255, 15, 135};
+    SDL_RenderFillRect(renderer, &inside5);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside6 = {65, 390, 215, 15};
+    SDL_RenderFillRect(renderer, &inside6);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside7 = {340, 390, 200, 15};
+    SDL_RenderFillRect(renderer, &inside7);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside8 = {540, 255, 15, 150};
+    SDL_RenderFillRect(renderer, &inside8);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect inside9 = {SCREEN_WIDTH / 2 - 7, SCREEN_HEIGHT / 2 - 25, 15, 50};
+    SDL_RenderFillRect(renderer, &inside9);
+}
 void render()
 {
 
@@ -394,7 +732,12 @@ void render()
     {
         if (level == 2)
         {
-            createobstacle2();
+            createobstacle();
+        }
+        if (level == 3)
+        {
+            sideobstacle();
+            insideobtacle1();
         }
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
         snakerend();
@@ -615,6 +958,8 @@ void gameloop()
     Mix_PlayMusic(bgm, -1);
     test = Mix_LoadMUS("music/prac.mp3");
     ne = Mix_LoadMUS("music/ne.mp3");
+    eat=Mix_LoadWAV("music/eating.wav");
+
 
     while (!quit)
     {
@@ -664,10 +1009,7 @@ void gameloop()
                 if (isStartButtonClicked(mouseX, mouseY) && phase == 0)
                 {
                     phase = 1;
-                    // stop music...
-                    //   Mix_HaltMusic();
-                    //   Mix_PlayMusic(test,0);
-                    //     Mix_PlayMusic(ne,-1);
+                    
                 }
                 else if (ismutebuttonclicked(mouseX, mouseY))
                 {
@@ -744,24 +1086,21 @@ void gameloop()
         }
         else if (phase == 2)
         {
-            if (level == 1)
-            {
-                update();
-                render();
-            }
-            else if (level == 2)
-            {
-                update();
-                render();
-            }
-            else if (level == 3)
-            {
-                update();
-                render();
-            }
+          update();
+          render();
         }
-
-        SDL_Delay(80);
+        if(level==1)
+        {
+            SDL_Delay(80);
+        }
+        else if(level==2)
+        {
+             SDL_Delay(50);
+        }
+        else if(level==3)
+        {
+              SDL_Delay(40);
+        }
     }
 }
 
@@ -776,9 +1115,10 @@ int main(int argc, char *argv[])
 
     Mix_FreeMusic(test);
     Mix_FreeMusic(ne);
+   // Mix_FreeMusic(eat);
 
     Mix_FreeMusic(bgm);
-
+    Mix_FreeChunk(eat);
     TTF_Quit();
     SDL_Quit();
     Mix_Quit();
