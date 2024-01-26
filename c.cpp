@@ -24,7 +24,8 @@ SDL_Surface *phase_1 = nullptr;
 SDL_Texture *Phase_t1 = nullptr;
 SDL_Surface *msurface = nullptr;
 SDL_Texture *mtexture = nullptr;
-int highscore=0;
+int highscore = 0;
+int level = 1;
 struct Snake
 {
     vector<pair<int, int>> body;
@@ -40,9 +41,13 @@ Snake snake;
 Food fruit;
 Food sfruit;
 int score = 0;
-int cnt=0;
+int cnt = 0;
 bool gameOver = false;
 // creating a food in random place............................................
+bool isPointInsideRect(int x, int y, const SDL_Rect &rect)
+{
+    return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
+}
 void foodplace()
 {
     bool onSnakeBody = true;
@@ -64,7 +69,89 @@ void foodplace()
         }
     }
 }
+void foodplace2()
+{
+    bool onSnakeBody = true;
+    bool onObstacleBody = true;
 
+    while (onSnakeBody || onObstacleBody)
+    {
+        onSnakeBody = false;
+        onObstacleBody = false;
+        fruit.x = rand() % (SCREEN_WIDTH / GRID_SIZE) * GRID_SIZE;
+        fruit.y = rand() % (SCREEN_HEIGHT / GRID_SIZE) * GRID_SIZE;
+
+        // Check fruit on body;
+        for (const auto &segment : snake.body)
+        {
+            if (fruit.x == segment.first && fruit.y == segment.second)
+            {
+                onSnakeBody = true;
+                break;
+            }
+        }
+        SDL_Rect obstacle1 = {0, 300, 300, 15};
+        SDL_Rect obstacle2 = {SCREEN_WIDTH - 300, 150, 300, 15};
+        if (isPointInsideRect(fruit.x, fruit.y, obstacle1) || isPointInsideRect(fruit.x, fruit.y, obstacle2))
+        {
+            onObstacleBody = true;
+        }
+    }
+}
+void sfoodplace()
+{
+    current_time = SDL_GetTicks();
+
+    bool onSnakeBody = true;
+
+    while (onSnakeBody)
+    {
+        onSnakeBody = false;
+        sfruit.x = rand() % (SCREEN_WIDTH / GRID_SIZE) * GRID_SIZE;
+        sfruit.y = rand() % (SCREEN_HEIGHT / GRID_SIZE) * GRID_SIZE;
+
+        // Check fruit on body;
+        for (const auto &segment : snake.body)
+        {
+            if (sfruit.x == segment.first && sfruit.y == segment.second)
+            {
+                onSnakeBody = true;
+                break;
+            }
+        }
+    }
+}
+void sfoodplace2()
+{
+    current_time = SDL_GetTicks();
+
+    bool onSnakeBody = true;
+    bool onObstacleBody = true;
+
+    while (onSnakeBody)
+    {
+        onSnakeBody = false;
+        onObstacleBody = false;
+        sfruit.x = rand() % (SCREEN_WIDTH / GRID_SIZE) * GRID_SIZE;
+        sfruit.y = rand() % (SCREEN_HEIGHT / GRID_SIZE) * GRID_SIZE;
+
+        // Check fruit on body;
+        for (const auto &segment : snake.body)
+        {
+            if (sfruit.x == segment.first && sfruit.y == segment.second)
+            {
+                onSnakeBody = true;
+                break;
+            }
+        }
+        SDL_Rect obstacle1 = {0, 300, 300, 15};
+        SDL_Rect obstacle2 = {SCREEN_WIDTH - 300, 150, 300, 15};
+        if (isPointInsideRect(sfruit.x, sfruit.y, obstacle1) || isPointInsideRect(sfruit.x, sfruit.y, obstacle2))
+        {
+            onObstacleBody = true;
+        }
+    }
+}
 // initialize winddow,renderer and ttf...............................
 void initializepart()
 {
@@ -87,12 +174,19 @@ void initializepart()
     snake.body.push_back({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
     snake.direction = 'R';
     foodplace();
-    
+    sfruit.x = -10;
+    sfruit.y = -20;
 }
+
 // update .....................................................................
 void update()
 {
-     
+    int recent_time = SDL_GetTicks();
+    if (recent_time - current_time >= 6000)
+    {
+        sfruit.x = -10;
+        sfruit.y = -10;
+    }
     pair<int, int> newsnake = snake.body.front();
 
     switch (snake.direction)
@@ -121,6 +215,16 @@ void update()
             break;
         }
     }
+    if (level == 2)
+    {
+        SDL_Rect obstacle1 = {0, 300, 300, 15};
+        SDL_Rect obstacle2 = {SCREEN_WIDTH - 300, 150, 300, 15};
+        if (isPointInsideRect(newsnake.first, newsnake.second, obstacle1) || isPointInsideRect(newsnake.first, newsnake.second, obstacle2))
+        {
+            gameOver = true;
+            Mix_HaltMusic();
+        }
+    }
     // collusion check with boundaries.....................................................
     if (newsnake.first < 0)
     {
@@ -139,68 +243,106 @@ void update()
     {
         newsnake.second = 0;
     }
-    
+
     snake.body.insert(snake.body.begin(), newsnake);
 
     if (newsnake.first == fruit.x && newsnake.second == fruit.y)
     {
-        foodplace();
+        if (level == 1)
+        {
+            foodplace();
+        }
+        else if (level == 2)
+        {
+            foodplace2();
+        }
         score += 5;
-      
+        cnt++;
+        if (cnt % 7 == 0)
+        {
+            if (level == 1)
+            {
+                sfoodplace();
+            }
+            else if (level == 2)
+            {
+                sfoodplace2();
+            }
+        }
+    }
+    else if (newsnake.first == sfruit.x && newsnake.second == sfruit.y)
+    {
+        score += 10;
+        sfruit.x = -100;
+        sfruit.y = -10;
     }
     else
     {
         snake.body.pop_back();
     }
-      
-
 }
 //
 void renderGameOver()
 {
-    ifstream input("highscore1.txt");
-    input>>highscore;
+    if (level == 1)
+    {
+        ifstream input("highscore1.txt");
+        input >> highscore;
 
-    ofstream output("highscore1.txt");
-    if(score>highscore)
-    {
-        output<<score;
+        ofstream output("highscore1.txt");
+        if (score > highscore)
+        {
+            output << score;
+        }
+        else
+        {
+            output << highscore;
+        }
     }
-    else
+    else if (level == 2)
     {
-        output<<highscore;
+        ifstream input("highscore2.txt");
+        input >> highscore;
+
+        ofstream output("highscore2.txt");
+        if (score > highscore)
+        {
+            output << score;
+        }
+        else
+        {
+            output << highscore;
+        }
     }
 
     TTF_Font *finalsecore = TTF_OpenFont("final.ttf", 30);
     string highscoretxt;
-    if(score>highscore)
+    if (score > highscore)
     {
-           highscoretxt = "High Score: " + to_string(score);
+        highscoretxt = "High Score: " + to_string(score);
     }
     else
     {
-         highscoretxt = "High Score: " + to_string(highscore);
+        highscoretxt = "High Score: " + to_string(highscore);
     }
     string finalScoreText = "Final Score: " + to_string(score);
-SDL_Color gtextColor = {0, 0, 0, 0};
+    SDL_Color gtextColor = {0, 0, 0, 0};
 
     SDL_Surface *finalScoreSurface = TTF_RenderText_Solid(finalsecore, finalScoreText.c_str(), gtextColor);
     SDL_Texture *finalScoreTexture = SDL_CreateTextureFromSurface(renderer, finalScoreSurface);
-    SDL_Rect finalScoreRect = {(SCREEN_WIDTH - finalScoreSurface->w) / 2, (SCREEN_HEIGHT / 3)+50, finalScoreSurface->w, finalScoreSurface->h};
-    SDL_RenderCopy(renderer, finalScoreTexture, nullptr, &finalScoreRect);
-
-     SDL_Surface *highscoresurface = TTF_RenderText_Solid(finalsecore, highscoretxt.c_str(), gtextColor);
-    SDL_Texture *highscoretexture = SDL_CreateTextureFromSurface(renderer, highscoresurface);
-    SDL_Rect highscorerect = {(SCREEN_WIDTH - highscoresurface->w) / 2, (SCREEN_HEIGHT / 2)+20, highscoresurface->w, highscoresurface->h};
-    SDL_RenderCopy(renderer, highscoretexture, nullptr, &highscorerect);
-
-
-   // SDL_FreeSurface(gameOverSurface);
-   // SDL_DestroyTexture(gameOverTexture);
-    TTF_CloseFont(finalsecore);
-
     SDL_FreeSurface(finalScoreSurface);
+    SDL_Rect finalScoreRect = {(SCREEN_WIDTH - finalScoreSurface->w) / 2, (SCREEN_HEIGHT / 3) + 50, finalScoreSurface->w, finalScoreSurface->h};
+    SDL_RenderCopy(renderer, finalScoreTexture, nullptr, &finalScoreRect);
     SDL_DestroyTexture(finalScoreTexture);
+
+    SDL_Surface *highscoresurface = TTF_RenderText_Solid(finalsecore, highscoretxt.c_str(), gtextColor);
+    SDL_Texture *highscoretexture = SDL_CreateTextureFromSurface(renderer, highscoresurface);
+    SDL_FreeSurface(highscoresurface);
+    SDL_Rect highscorerect = {(SCREEN_WIDTH - highscoresurface->w) / 2, (SCREEN_HEIGHT / 2) + 20, highscoresurface->w, highscoresurface->h};
+    SDL_RenderCopy(renderer, highscoretexture, nullptr, &highscorerect);
+    SDL_DestroyTexture(highscoretexture);
+
+    TTF_CloseFont(finalsecore);
 }
 void snakerend()
 {
@@ -213,36 +355,54 @@ void snakerend()
 void foodrend()
 {
     SDL_Rect foodRect = {fruit.x, fruit.y, 10, 10};
-   SDL_RenderFillRect(renderer, &foodRect);
+    SDL_RenderFillRect(renderer, &foodRect);
 }
-
+void sfoodrend()
+{
+    SDL_Rect sfoodRect = {sfruit.x, sfruit.y, 10, 10};
+    SDL_RenderFillRect(renderer, &sfoodRect);
+}
 void resetsnake()
 {
-     snake.body.clear();
-          snake.body.push_back({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
+    snake.body.clear();
+    snake.body.push_back({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
     snake.direction = 'R';
     foodplace();
+    sfruit.x = -10;
+    sfruit.y = -20;
+    cnt = 0;
 }
+void createobstacle2()
+{
+    // obstacle1..............
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect obstacle1 = {0, 300, 300, 15};
+    SDL_RenderFillRect(renderer, &obstacle1);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect obstacle2 = {SCREEN_WIDTH - 300, 150, 300, 15};
+    SDL_RenderFillRect(renderer, &obstacle2);
+    // obstacle2.......................
+}
+
 void render()
 {
+
     SDL_SetRenderDrawColor(renderer, 0, 102, 102, 255);
     SDL_RenderClear(renderer);
 
     if (!gameOver)
     {
-               /* SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                SDL_Rect obstacle={50,70,100,15};
-        SDL_RenderFillRect(renderer,&obstacle);
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                SDL_Rect obstacle1={50,85,15,85};
-        SDL_RenderFillRect(renderer,&obstacle1);*/
-        
+        if (level == 2)
+        {
+            createobstacle2();
+        }
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
         snakerend();
 
-                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                 foodrend();
- 
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        foodrend();
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        sfoodrend();
 
         // Render the score
         string scoreText = "Score: " + to_string(score);
@@ -262,27 +422,17 @@ void render()
         g_finished = SDL_CreateTextureFromSurface(renderer, finished);
         SDL_FreeSurface(finished);
         SDL_RenderCopy(renderer, g_finished, NULL, NULL);
+        SDL_DestroyTexture(g_finished);
         renderGameOver();
         resetsnake();
         SDL_RenderPresent(renderer);
-       
-        //SDL_Delay(15000);
-        //SDL_Quit();
+
+        // SDL_Delay(15000);
+        // SDL_Quit();
     }
 }
 
-bool isPointInsideRect(int x, int y, const SDL_Rect &rect)
-{
-    return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
-}
 // button clicked or not........................................
-bool isStartButtonClicked(int mouseX, int mouseY)
-{
-
-    SDL_Rect startButtonRect = {SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 5, 200, 50};
-
-    return isPointInsideRect(mouseX, mouseY, startButtonRect);
-}
 
 void renderStartButton()
 {
@@ -290,7 +440,7 @@ void renderStartButton()
     // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     // SDL_RenderFillRect(renderer, &startButtonRect);
 
-    TTF_Font *buttonFont = TTF_OpenFont("shawon.ttf",35);
+    TTF_Font *buttonFont = TTF_OpenFont("shawon.ttf", 35);
     SDL_Color buttonTextColor = {0, 0, 0, 0};
     string buttonText = "play-game";
 
@@ -307,6 +457,13 @@ void renderStartButton()
     SDL_FreeSurface(surface);
     SDL_DestroyTexture(texture);
     TTF_CloseFont(buttonFont);
+}
+bool isStartButtonClicked(int mouseX, int mouseY)
+{
+
+    SDL_Rect startButtonRect = {SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 5, 200, 50};
+
+    return isPointInsideRect(mouseX, mouseY, startButtonRect);
 }
 
 void renderExitButton()
@@ -332,16 +489,16 @@ void renderExitButton()
     SDL_DestroyTexture(texture);
     TTF_CloseFont(buttonFont);
 }
-
 bool isExitButtonClicked(int mouseX, int mouseY)
 {
     SDL_Rect exitButtonRect = {200, 300, 200, 50};
     return isPointInsideRect(mouseX, mouseY, exitButtonRect);
 }
+
 void easybutton()
 {
-    SDL_Rect easybuttonrect = {SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 25, 200, 50};
-     //SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect easybuttonrect = {SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 70, 200, 50};
+    // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     // SDL_RenderFillRect(renderer, &easybuttonrect);
 
     TTF_Font *buttonFont = TTF_OpenFont("shawon.ttf", 40);
@@ -365,17 +522,49 @@ void easybutton()
 bool iseasybuttonclicked(int mouseX, int mouseY)
 {
 
-    SDL_Rect easybuttonrect = {SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 25, 200, 50};
+    SDL_Rect easybuttonrect = {SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 70, 200, 50};
 
     return isPointInsideRect(mouseX, mouseY, easybuttonrect);
 }
-void hardbutton()
+
+void mediumbutton()
 {
-    SDL_Rect hardbuttonract = {200, 300, 200, 50};
+    SDL_Rect mediumrect = {200, SCREEN_HEIGHT / 2, 200, 50};
     // SDL_RenderFillRect(renderer, &exitButtonRect);
 
     TTF_Font *buttonFont = TTF_OpenFont("shawon.ttf", 40);
     SDL_Color buttonTextColor = {255, 0, 0, 255};
+    string buttonText = "MEDIUM";
+
+    SDL_Surface *surface = TTF_RenderText_Solid(buttonFont, buttonText.c_str(), buttonTextColor);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+    SDL_Rect textRect = {mediumrect.x + (mediumrect.w - surface->w) / 2,
+                         mediumrect.y + (mediumrect.h - surface->h) / 2,
+                         surface->w,
+                         surface->h};
+
+    SDL_RenderCopy(renderer, texture, nullptr, &textRect);
+
+    SDL_FreeSurface(surface);
+    SDL_DestroyTexture(texture);
+    TTF_CloseFont(buttonFont);
+}
+bool ismediumbuttonclicked(int mouseX, int mouseY)
+{
+
+    SDL_Rect mediumrect = {200, SCREEN_HEIGHT / 2, 200, 50};
+
+    return isPointInsideRect(mouseX, mouseY, mediumrect);
+}
+
+void hardbutton()
+{
+    SDL_Rect hardbuttonract = {200, SCREEN_HEIGHT / 2 + 70, 200, 50};
+    // SDL_RenderFillRect(renderer, &exitButtonRect);
+
+    TTF_Font *buttonFont = TTF_OpenFont("shawon.ttf", 40);
+    SDL_Color buttonTextColor = {0, 0, 0, 0};
     string buttonText = "HARD";
 
     SDL_Surface *surface = TTF_RenderText_Solid(buttonFont, buttonText.c_str(), buttonTextColor);
@@ -395,30 +584,32 @@ void hardbutton()
 bool ishardbuttonclicked(int mouseX, int mouseY)
 {
 
-    SDL_Rect hardbuttonract = {200, 300, 200, 50};
+    SDL_Rect hardbuttonract = {200, SCREEN_HEIGHT / 2 + 70, 200, 50};
 
     return isPointInsideRect(mouseX, mouseY, hardbuttonract);
+}
+
+void mutebutton()
+{
+    SDL_Rect mute = {5, 5, 20, 20};
+    msurface = SDL_LoadBMP("pic/m.bmp");
+    mtexture = SDL_CreateTextureFromSurface(renderer, msurface);
+    SDL_FreeSurface(msurface);
+    SDL_RenderCopy(renderer, mtexture, NULL, &mute);
+    SDL_DestroyTexture(mtexture);
 }
 bool ismutebuttonclicked(int mouseX, int mouseY)
 {
     SDL_Rect mute = {5, 5, 20, 20};
     return isPointInsideRect(mouseX, mouseY, mute);
 }
-void mutebutton()
-{
-         SDL_Rect mute={5,5,20,20};
-            msurface=SDL_LoadBMP("pic/m.bmp");
-            mtexture = SDL_CreateTextureFromSurface(renderer, msurface);
-            SDL_RenderCopy(renderer, mtexture, NULL, &mute);
-                SDL_FreeSurface(msurface);
-}
+
 void gameloop()
 {
     SDL_Event e;
     bool quit = false;
     int phase = 0;
-    int mcnt=0;
-    bool mode=false;
+    int mcnt = 0;
     // music
     bgm = Mix_LoadMUS("music/bgm.mp3");
     Mix_PlayMusic(bgm, -1);
@@ -455,17 +646,14 @@ void gameloop()
                         snake.direction = 'R';
                     break;
                 case SDLK_SPACE:
-                    if(gameOver!=false)
+                    if (gameOver != false)
                     {
-                        gameOver=false;
-                        score=0;
-                        phase=1;
+                        gameOver = false;
+                        score = 0;
+                        phase = 1;
                         Mix_PlayMusic(bgm, -1);
-
                     }
                     break;
-
-
                 }
             }
             else if (e.type == SDL_MOUSEBUTTONDOWN)
@@ -473,7 +661,7 @@ void gameloop()
                 int mouseX, mouseY;
                 SDL_GetMouseState(&mouseX, &mouseY);
 
-                if (isStartButtonClicked(mouseX, mouseY)&&phase==0)
+                if (isStartButtonClicked(mouseX, mouseY) && phase == 0)
                 {
                     phase = 1;
                     // stop music...
@@ -481,35 +669,42 @@ void gameloop()
                     //   Mix_PlayMusic(test,0);
                     //     Mix_PlayMusic(ne,-1);
                 }
-                else if(ismutebuttonclicked(mouseX, mouseY))
+                else if (ismutebuttonclicked(mouseX, mouseY))
                 {
                     mcnt++;
-                    if(mcnt%2==1)
+                    if (mcnt % 2 == 1)
                     {
-                       Mix_PauseMusic();
+                        Mix_PauseMusic();
                     }
-                    else{
+                    else
+                    {
                         Mix_ResumeMusic();
                     }
-
                 }
-                else if (iseasybuttonclicked(mouseX, mouseY)&& phase==1)
+                else if (iseasybuttonclicked(mouseX, mouseY) && phase == 1)
                 {
                     Mix_HaltMusic();
-                     Mix_PlayMusic(ne,-1);
+                    Mix_PlayMusic(ne, -1);
                     phase = 2;
-                    mode=true;
+                    level = 1;
                 }
-                else if (isExitButtonClicked(mouseX, mouseY)&& phase==0)
+                else if (isExitButtonClicked(mouseX, mouseY) && phase == 0)
                 {
                     quit = true;
                 }
-                else if(ishardbuttonclicked(mouseX,mouseY)&& phase==1)
+                else if (ishardbuttonclicked(mouseX, mouseY) && phase == 1)
                 {
-                     Mix_HaltMusic();
-                     Mix_PlayMusic(ne,-1);
+                    Mix_HaltMusic();
+                    Mix_PlayMusic(ne, -1);
                     phase = 2;
-                  mode=false;
+                    level = 3;
+                }
+                else if (ismediumbuttonclicked(mouseX, mouseY) && phase == 1)
+                {
+                    Mix_HaltMusic();
+                    Mix_PlayMusic(ne, -1);
+                    phase = 2;
+                    level = 2;
                 }
             }
         }
@@ -524,13 +719,12 @@ void gameloop()
             SDL_FreeSurface(p_surface);
             SDL_RenderCopy(renderer, p_texture, NULL, NULL);
 
-              mutebutton();
+            mutebutton();
             renderStartButton();
             renderExitButton();
 
-               SDL_RenderPresent(renderer);
-                SDL_DestroyTexture(p_texture);
-
+            SDL_RenderPresent(renderer);
+            SDL_DestroyTexture(p_texture);
         }
         else if (phase == 1)
         {
@@ -543,22 +737,28 @@ void gameloop()
             // add music here
             mutebutton();
             easybutton();
+            mediumbutton();
             hardbutton();
-
             SDL_RenderPresent(renderer);
-
+            SDL_DestroyTexture(Phase_t1);
         }
         else if (phase == 2)
         {
-           if(mode)
-           {
-             update();
-            render();
-           }
-           else{
-             update();
-            render();
-           }
+            if (level == 1)
+            {
+                update();
+                render();
+            }
+            else if (level == 2)
+            {
+                update();
+                render();
+            }
+            else if (level == 3)
+            {
+                update();
+                render();
+            }
         }
 
         SDL_Delay(80);
@@ -573,8 +773,6 @@ int main(int argc, char *argv[])
     TTF_CloseFont(font);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-    SDL_DestroyTexture(Phase_t1);
-    SDL_DestroyTexture(mtexture);
 
     Mix_FreeMusic(test);
     Mix_FreeMusic(ne);
