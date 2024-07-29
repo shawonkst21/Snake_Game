@@ -2,9 +2,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_image.h>
+#include<SDL2/SDL_image.h>
 using namespace std;
-//..............................
+
 const int SCREEN_WIDTH = 620;
 const int SCREEN_HEIGHT = 480;
 const int GRID_SIZE = 10;
@@ -13,15 +13,13 @@ int current_time;
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
 TTF_Font *font = nullptr;
-SDL_Color textColor = {0, 0, 0, 0};
+SDL_Color textColor = {255, 255, 255, 255};
 SDL_Surface *p_surface = nullptr;
 SDL_Texture *p_texture = nullptr;
 Mix_Music *bgm = nullptr;
 Mix_Music *test = nullptr;
 Mix_Music *ne = nullptr;
 Mix_Chunk *eat = nullptr;
-Mix_Chunk *click = nullptr;
-Mix_Chunk *ting = nullptr;
 
 SDL_Surface *finished = nullptr;
 SDL_Texture *g_finished = nullptr;
@@ -31,11 +29,6 @@ SDL_Surface *msurface = nullptr;
 SDL_Texture *mtexture = nullptr;
 int highscore = 0;
 int level = 1;
-SDL_Rect rectangle;
-SDL_Rect rectangle2;
-SDL_Rect rectangle3;
-SDL_Rect rectangle4;
-//....................
 struct Snake
 {
     vector<pair<int, int>> body;
@@ -47,7 +40,6 @@ struct Food
     int x, y;
 };
 
-//....................................
 Snake snake;
 Food fruit;
 Food sfruit;
@@ -153,6 +145,7 @@ void foodplace3()
         }
     }
 }
+
 
 void sfoodplace()
 {
@@ -278,25 +271,6 @@ void initializepart()
     foodplace();
     sfruit.x = -100;
     sfruit.y = -200;
-    rectangle.x = 0;
-    rectangle.y = 0;
-    rectangle.w = 640;
-    rectangle.h = 480;
-
-    rectangle2.x = -639;
-    rectangle2.y = 0;
-    rectangle2.w = 640;
-    rectangle2.h = 480;
-
-    rectangle3.x = 0;
-    rectangle3.y = 0;
-    rectangle3.w = 640;
-    rectangle3.h = 480;
-
-    rectangle4.x = 0;
-    rectangle4.y = -480;
-    rectangle4.w = 640;
-    rectangle4.h = 480;
 }
 bool check(int a, int b)
 {
@@ -327,14 +301,6 @@ bool check(int a, int b)
 bool foodcheck(int a, int b)
 {
     SDL_Rect foodRect = {fruit.x, fruit.y, 15, 15};
-    if (isPointInsideRect(a, b, foodRect))
-    {
-        return 1;
-    }
-}
-bool sfoodcheck(int a, int b)
-{
-    SDL_Rect foodRect = {sfruit.x, sfruit.y, 15, 15};
     if (isPointInsideRect(a, b, foodRect))
     {
         return 1;
@@ -387,7 +353,7 @@ void update()
             Mix_HaltMusic();
         }
     }
-    else if (level == 3)
+   else if (level == 3)
     {
         bool over = check(newsnake.first, newsnake.second);
         if (over)
@@ -427,28 +393,15 @@ void update()
         {
             foodplace2();
         }
-        else if (level == 3)
+        else if(level==3)
         {
             foodplace3();
         }
-        Mix_PlayChannel(-1, eat, 0);
-        if (level == 1)
-        {
-            score += 20;
-        }
-        else if (level == 2)
-        {
-            score += 10;
-        }
-        else
-        {
-            score += 5;
-        }
+       Mix_PlayChannel(-1,eat,0);
+        score += 5;
         cnt++;
-
         if (cnt % 7 == 0)
         {
-            Mix_PlayChannel(-1, ting, 0);
             if (level == 1)
             {
                 sfoodplace();
@@ -457,28 +410,15 @@ void update()
             {
                 sfoodplace2();
             }
-            else if (level == 3)
+            else if(level==3)
             {
-                sfoodplace3();
+                 sfoodplace3();
             }
         }
     }
-    else if (sfoodcheck(newsnake.first, newsnake.second))
-
+    else if (newsnake.first == sfruit.x && newsnake.second == sfruit.y)
     {
-        Mix_PlayChannel(-1, eat, 0);
-        if (level == 1)
-        {
-            score += 50;
-        }
-        else if (level == 2)
-        {
-            score += 25;
-        }
-        else
-        {
-            score += 10;
-        }
+        score += 10;
         sfruit.x = -100;
         sfruit.y = -100;
     }
@@ -520,7 +460,7 @@ void renderGameOver()
             output << highscore;
         }
     }
-    else if (level == 3)
+      else if (level == 3)
     {
         ifstream input("highscore3.txt");
         input >> highscore;
@@ -582,7 +522,7 @@ void snakerend()
     SDL_Surface *headRightImg = IMG_Load("pic/head_right.png");
     SDL_Texture *headRightTexture = SDL_CreateTextureFromSurface(renderer, headRightImg);
     SDL_FreeSurface(headRightImg);
-    //.............................................................................................
+//.............................................................................................
     SDL_Surface *bodyUpImg = IMG_Load("pic/body_up.png");
     SDL_Texture *bodyUpTexture = SDL_CreateTextureFromSurface(renderer, bodyUpImg);
     SDL_FreeSurface(bodyUpImg);
@@ -691,7 +631,7 @@ void snakerend()
 }
 void foodrend()
 {
-    SDL_Rect foodRect = {fruit.x, fruit.y, 20, 20};
+    SDL_Rect foodRect = {fruit.x, fruit.y, 15, 15};
     // SDL_RenderFillRect(renderer, &foodRect);
     SDL_Surface *image = IMG_Load("pic/fruit2.png");
     SDL_Texture *ourpng = SDL_CreateTextureFromSurface(renderer, image);
@@ -701,9 +641,9 @@ void foodrend()
 }
 void sfoodrend()
 {
-    SDL_Rect sfoodRect = {sfruit.x, sfruit.y, 20, 20};
-    // SDL_RenderFillRect(renderer, &sfoodRect);
-    SDL_Surface *image = IMG_Load("pic/fruit.png");
+    SDL_Rect sfoodRect = {sfruit.x, sfruit.y, 15, 15};
+   // SDL_RenderFillRect(renderer, &sfoodRect);
+     SDL_Surface *image = IMG_Load("pic/fruit.png");
     SDL_Texture *ourpng = SDL_CreateTextureFromSurface(renderer, image);
     SDL_FreeSurface(image);
     SDL_RenderCopy(renderer, ourpng, NULL, &sfoodRect);
@@ -722,84 +662,65 @@ void resetsnake()
 void createobstacle()
 {
     // obstacle1..............
-    // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect obstacle1 = {0, 300, 300, 15};
-    //  SDL_RenderFillRect(renderer, &obstacle1);
-    SDL_Surface *surface1 = SDL_LoadBMP("pic/border2.bmp");
-    SDL_Texture *texture1 = SDL_CreateTextureFromSurface(renderer, surface1);
-    SDL_FreeSurface(surface1);
-    SDL_RenderCopy(renderer, texture1, NULL, &obstacle1);
-    // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &obstacle1);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect obstacle2 = {SCREEN_WIDTH - 300, 150, 300, 15};
-    SDL_RenderCopy(renderer, texture1, NULL, &obstacle2);
-
-    // SDL_RenderFillRect(renderer, &obstacle2);
-    SDL_DestroyTexture(texture1);
-
+    SDL_RenderFillRect(renderer, &obstacle2);
     // obstacle2.......................
 }
 void sideobstacle()
 {
-
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect side1 = {0, 0, 15, SCREEN_HEIGHT};
-
+    SDL_RenderFillRect(renderer, &side1);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect side2 = {15, 0, SCREEN_WIDTH - 30, 15};
-
+    SDL_RenderFillRect(renderer, &side2);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect side3 = {SCREEN_WIDTH - 15, 0, 15, SCREEN_HEIGHT};
-
+    SDL_RenderFillRect(renderer, &side3);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect side4 = {15, SCREEN_HEIGHT - 15, SCREEN_WIDTH - 30, 15};
-
-    SDL_Surface *surface1 = SDL_LoadBMP("pic/border2.bmp");
-    SDL_Texture *texture1 = SDL_CreateTextureFromSurface(renderer, surface1);
-    SDL_FreeSurface(surface1);
-    SDL_Surface *surface2 = SDL_LoadBMP("pic/rborder2.bmp");
-    SDL_Texture *texture2 = SDL_CreateTextureFromSurface(renderer, surface2);
-    SDL_FreeSurface(surface2);
-    SDL_RenderCopy(renderer, texture2, NULL, &side1);
-    SDL_RenderCopy(renderer, texture1, NULL, &side2);
-    SDL_RenderCopy(renderer, texture2, NULL, &side3);
-    SDL_RenderCopy(renderer, texture1, NULL, &side4);
-    SDL_DestroyTexture(texture1);
-    SDL_DestroyTexture(texture2);
+    SDL_RenderFillRect(renderer, &side4);
 }
 void insideobtacle1()
 {
-
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside1 = {80, 75, 200, 15};
+    SDL_RenderFillRect(renderer, &inside1);
 
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside2 = {340, 75, 200, 15};
+    SDL_RenderFillRect(renderer, &inside2);
 
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside3 = {65, 75, 15, 135};
+    SDL_RenderFillRect(renderer, &inside3);
 
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside4 = {540, 75, 15, 135};
+    SDL_RenderFillRect(renderer, &inside4);
 
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside5 = {65, 255, 15, 135};
+    SDL_RenderFillRect(renderer, &inside5);
 
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside6 = {65, 390, 215, 15};
+    SDL_RenderFillRect(renderer, &inside6);
 
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside7 = {340, 390, 200, 15};
+    SDL_RenderFillRect(renderer, &inside7);
 
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside8 = {540, 255, 15, 150};
-
+    SDL_RenderFillRect(renderer, &inside8);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_Rect inside9 = {SCREEN_WIDTH / 2 - 7, SCREEN_HEIGHT / 2 - 25, 15, 50};
-    SDL_Surface *surface1 = SDL_LoadBMP("pic/border.bmp");
-    SDL_Texture *texture1 = SDL_CreateTextureFromSurface(renderer, surface1);
-    SDL_FreeSurface(surface1);
-
-    SDL_Surface *surface2 = SDL_LoadBMP("pic/gborder.bmp");
-    SDL_Texture *texture2 = SDL_CreateTextureFromSurface(renderer, surface2);
-    SDL_FreeSurface(surface2);
-
-    SDL_RenderCopy(renderer, texture1, NULL, &inside1);
-    SDL_RenderCopy(renderer, texture1, NULL, &inside2);
-    SDL_RenderCopy(renderer, texture2, NULL, &inside3);
-    SDL_RenderCopy(renderer, texture2, NULL, &inside4);
-    SDL_RenderCopy(renderer, texture2, NULL, &inside5);
-    SDL_RenderCopy(renderer, texture1, NULL, &inside6);
-    SDL_RenderCopy(renderer, texture1, NULL, &inside7);
-    SDL_RenderCopy(renderer, texture2, NULL, &inside8);
-    SDL_RenderCopy(renderer, texture2, NULL, &inside9);
-    SDL_DestroyTexture(texture1);
+    SDL_RenderFillRect(renderer, &inside9);
 }
 void render()
 {
@@ -809,87 +730,14 @@ void render()
 
     if (!gameOver)
     {
-        if (level == 1)
-        {
-            SDL_Surface *surface1 = SDL_LoadBMP("pic/sky2.bmp");
-            SDL_Texture *texture1 = SDL_CreateTextureFromSurface(renderer, surface1);
-            SDL_Texture *texture2 = SDL_CreateTextureFromSurface(renderer, surface1);
-
-            SDL_FreeSurface(surface1);
-
-            SDL_SetTextureBlendMode(texture1, SDL_BLENDMODE_NONE);
-            SDL_SetTextureBlendMode(texture2, SDL_BLENDMODE_MOD);
-
-            SDL_RenderCopy(renderer, texture1, NULL, &rectangle);
-            SDL_RenderCopy(renderer, texture1, NULL, &rectangle2);
-
-            SDL_RenderCopy(renderer, texture2, NULL, &rectangle3);
-            SDL_RenderCopy(renderer, texture2, NULL, &rectangle4);
-            SDL_DestroyTexture(texture1);
-            SDL_DestroyTexture(texture2);
-        }
         if (level == 2)
         {
-            SDL_Surface *surface1 = SDL_LoadBMP("pic/sky2.bmp");
-            SDL_Texture *texture1 = SDL_CreateTextureFromSurface(renderer, surface1);
-            SDL_Texture *texture2 = SDL_CreateTextureFromSurface(renderer, surface1);
-
-            SDL_FreeSurface(surface1);
-
-            SDL_SetTextureBlendMode(texture1, SDL_BLENDMODE_NONE);
-            SDL_SetTextureBlendMode(texture2, SDL_BLENDMODE_MOD);
-
-            SDL_RenderCopy(renderer, texture1, NULL, &rectangle);
-            SDL_RenderCopy(renderer, texture1, NULL, &rectangle2);
-
-            SDL_RenderCopy(renderer, texture2, NULL, &rectangle3);
-            SDL_RenderCopy(renderer, texture2, NULL, &rectangle4);
-            SDL_DestroyTexture(texture1);
-            SDL_DestroyTexture(texture2);
-
             createobstacle();
         }
         if (level == 3)
         {
-            SDL_Surface *surface1 = SDL_LoadBMP("pic/sky2.bmp");
-            SDL_Texture *texture1 = SDL_CreateTextureFromSurface(renderer, surface1);
-            SDL_Texture *texture2 = SDL_CreateTextureFromSurface(renderer, surface1);
-
-            SDL_FreeSurface(surface1);
-
-            SDL_SetTextureBlendMode(texture1, SDL_BLENDMODE_NONE);
-            SDL_SetTextureBlendMode(texture2, SDL_BLENDMODE_MOD);
-
-            SDL_RenderCopy(renderer, texture1, NULL, &rectangle);
-            SDL_RenderCopy(renderer, texture1, NULL, &rectangle2);
-
-            SDL_RenderCopy(renderer, texture2, NULL, &rectangle3);
-            SDL_RenderCopy(renderer, texture2, NULL, &rectangle4);
-            SDL_DestroyTexture(texture1);
-            SDL_DestroyTexture(texture2);
             sideobstacle();
             insideobtacle1();
-        }
-        rectangle.x++;
-        if (rectangle.x > 639)
-        {
-            rectangle.x = -639;
-        }
-        rectangle2.x++;
-        if (rectangle2.x > 639)
-        {
-            rectangle2.x = -639;
-        }
-
-        rectangle3.y++;
-        if (rectangle3.y > 479)
-        {
-            rectangle3.y = -480;
-        }
-        rectangle4.y++;
-        if (rectangle4.y > 479)
-        {
-            rectangle4.y = -480;
         }
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
         snakerend();
@@ -903,7 +751,7 @@ void render()
         string scoreText = "Score: " + to_string(score);
         SDL_Surface *surface = TTF_RenderText_Solid(font, scoreText.c_str(), textColor);
         SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_Rect scoreRect = {15, 15, surface->w, surface->h};
+        SDL_Rect scoreRect = {10, 10, surface->w, surface->h};
         SDL_RenderCopy(renderer, texture, nullptr, &scoreRect);
 
         SDL_FreeSurface(surface);
@@ -926,6 +774,7 @@ void render()
         // SDL_Quit();
     }
 }
+
 // button clicked or not........................................
 
 void renderStartButton()
@@ -1092,34 +941,6 @@ void mutebutton()
     SDL_RenderCopy(renderer, mtexture, NULL, &mute);
     SDL_DestroyTexture(mtexture);
 }
-void instruction()
-{
-    SDL_Rect ins = {580, 5, 30, 30};
-    SDL_Surface *surface = IMG_Load("pic/ins.png");
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
-    SDL_RenderCopy(renderer, texture, NULL, &ins);
-    SDL_DestroyTexture(texture);
-}
-bool isinsbuttonclicked(int mouseX, int mouseY)
-{
-    SDL_Rect ins = {580, 5, 30, 30};
-    return isPointInsideRect(mouseX, mouseY, ins);
-}
-void backbutton()
-{
-    SDL_Rect back = {590, 4, 20, 20};
-    SDL_Surface *surface = IMG_Load("pic/back.png");
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
-    SDL_RenderCopy(renderer, texture, NULL, &back);
-    SDL_DestroyTexture(texture);
-}
-bool isbackbuttonclicked(int mouseX, int mouseY)
-{
-    SDL_Rect back = {590, 4, 20, 20};
-    return isPointInsideRect(mouseX, mouseY, back);
-}
 bool ismutebuttonclicked(int mouseX, int mouseY)
 {
     SDL_Rect mute = {5, 5, 20, 20};
@@ -1132,15 +953,13 @@ void gameloop()
     bool quit = false;
     int phase = 0;
     int mcnt = 0;
-    int i = 0;
     // music
     bgm = Mix_LoadMUS("music/bgm.mp3");
     Mix_PlayMusic(bgm, -1);
     test = Mix_LoadMUS("music/prac.mp3");
-    ne = Mix_LoadMUS("music/hish.mp3");
-    eat = Mix_LoadWAV("music/eating.wav");
-    click = Mix_LoadWAV("music/click.wav");
-    ting = Mix_LoadWAV("music/ting.wav");
+    ne = Mix_LoadMUS("music/ne.mp3");
+    eat=Mix_LoadWAV("music/eating.wav");
+
 
     while (!quit)
     {
@@ -1174,7 +993,6 @@ void gameloop()
                 case SDLK_SPACE:
                     if (gameOver != false)
                     {
-                        Mix_PlayChannel(-1, click, 0);
                         gameOver = false;
                         score = 0;
                         phase = 1;
@@ -1191,11 +1009,10 @@ void gameloop()
                 if (isStartButtonClicked(mouseX, mouseY) && phase == 0)
                 {
                     phase = 1;
-                    Mix_PlayChannel(-1, click, 0);
+                    
                 }
                 else if (ismutebuttonclicked(mouseX, mouseY))
                 {
-                    Mix_PlayChannel(-1, click, 0);
                     mcnt++;
                     if (mcnt % 2 == 1)
                     {
@@ -1208,7 +1025,6 @@ void gameloop()
                 }
                 else if (iseasybuttonclicked(mouseX, mouseY) && phase == 1)
                 {
-                    Mix_PlayChannel(-1, click, 0);
                     Mix_HaltMusic();
                     Mix_PlayMusic(ne, -1);
                     phase = 2;
@@ -1216,12 +1032,10 @@ void gameloop()
                 }
                 else if (isExitButtonClicked(mouseX, mouseY) && phase == 0)
                 {
-                    Mix_PlayChannel(-1, click, 0);
                     quit = true;
                 }
                 else if (ishardbuttonclicked(mouseX, mouseY) && phase == 1)
                 {
-                    Mix_PlayChannel(-1, click, 0);
                     Mix_HaltMusic();
                     Mix_PlayMusic(ne, -1);
                     phase = 2;
@@ -1229,26 +1043,10 @@ void gameloop()
                 }
                 else if (ismediumbuttonclicked(mouseX, mouseY) && phase == 1)
                 {
-                    Mix_PlayChannel(-1, click, 0);
                     Mix_HaltMusic();
                     Mix_PlayMusic(ne, -1);
                     phase = 2;
                     level = 2;
-                }
-                else if (isbackbuttonclicked(mouseX, mouseY) && phase == 1)
-                {
-                    Mix_PlayChannel(-1, click, 0);
-                    phase = 0;
-                }
-                else if (isinsbuttonclicked(mouseX, mouseY) && phase == 0)
-                {
-                    Mix_PlayChannel(-1, click, 0);
-                    phase = 3;
-                }
-                else if (isbackbuttonclicked(mouseX, mouseY) && phase == 3)
-                {
-                    Mix_PlayChannel(-1, click, 0);
-                    phase = 0;
                 }
             }
         }
@@ -1264,24 +1062,11 @@ void gameloop()
             SDL_RenderCopy(renderer, p_texture, NULL, NULL);
 
             mutebutton();
-            instruction();
             renderStartButton();
             renderExitButton();
 
             SDL_RenderPresent(renderer);
             SDL_DestroyTexture(p_texture);
-        }
-        else if (phase == 3)
-        {
-            SDL_SetRenderDrawColor(renderer, 0, 102, 102, 255);
-            SDL_RenderClear(renderer);
-            SDL_Surface *surface = IMG_Load("pic/menu.png");
-            SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-            SDL_FreeSurface(surface);
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
-            backbutton();
-            SDL_DestroyTexture(texture);
-            SDL_RenderPresent(renderer);
         }
         else if (phase == 1)
         {
@@ -1293,7 +1078,6 @@ void gameloop()
             SDL_RenderCopy(renderer, Phase_t1, NULL, NULL);
             // add music here
             mutebutton();
-            backbutton();
             easybutton();
             mediumbutton();
             hardbutton();
@@ -1302,20 +1086,20 @@ void gameloop()
         }
         else if (phase == 2)
         {
-            update();
-            render();
+          update();
+          render();
         }
-        if (level == 1)
+        if(level==1)
         {
             SDL_Delay(80);
         }
-        else if (level == 2)
+        else if(level==2)
         {
-            SDL_Delay(50);
+             SDL_Delay(50);
         }
-        else if (level == 3)
+        else if(level==3)
         {
-            SDL_Delay(40);
+              SDL_Delay(40);
         }
     }
 }
@@ -1331,12 +1115,10 @@ int main(int argc, char *argv[])
 
     Mix_FreeMusic(test);
     Mix_FreeMusic(ne);
-    // Mix_FreeMusic(eat);
+   // Mix_FreeMusic(eat);
 
     Mix_FreeMusic(bgm);
     Mix_FreeChunk(eat);
-    Mix_FreeChunk(click);
-
     TTF_Quit();
     SDL_Quit();
     Mix_Quit();
