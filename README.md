@@ -1,4 +1,4 @@
-# Snake Game 🐍
+# 🎮Snake Game 🐍
 
 ## Author
 **Name:** Sadman Shawon
